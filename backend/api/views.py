@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from crop_prediction.models import CropRecommendation
+from api.models import CropRecommendation
 from crop_prediction.prediction import predict_crop, recommend_fertilizer
 from .serializers import CropRecommendationSerializer
 from pest_recognition.models import PlantDiseaseDetection
