@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from api.models import CropRecommendation
 from pest_recognition.models import PlantDiseaseDetection
+from .models import PredictionHistory
 
 class CropRecommendationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,3 +32,14 @@ class PlantDiseaseDetectionSerializer(serializers.ModelSerializer):
     
     def get_username(self, obj):
         return obj.user.username
+
+
+class PredictionHistorySerializer(serializers.ModelSerializer):
+    soil_params = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PredictionHistory
+        fields = ['id', 'prediction_date', 'crop', 'fertilizer', 'soil_params']
+    
+    def get_soil_params(self, obj):
+        return obj.soil_params

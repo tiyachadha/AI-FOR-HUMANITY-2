@@ -1,5 +1,6 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from api.models import CropRecommendation
 from crop_prediction.prediction import predict_crop, recommend_fertilizer
 from .serializers import CropRecommendationSerializer
@@ -7,7 +8,10 @@ from pest_recognition.models import PlantDiseaseDetection
 from users.models import User
 from pest_recognition.recognition import recognizer, get_treatment_recommendation
 from .serializers import PlantDiseaseDetectionSerializer
+from api.models import PredictionHistory
+from api.serializers import PredictionHistorySerializer
 import os
+import json
 
 # API endpoints for crop prediction
 class CropPredictionView(generics.CreateAPIView):
@@ -29,7 +33,27 @@ class CropPredictionView(generics.CreateAPIView):
         
         # Get fertilizer recommendation
         fertilizer = recommend_fertilizer(n, p, k, crop)
+
+        soil_params = {
+            'n': n,
+            'p': p,
+            'k': k,
+            'ph': ph,
+            'rainfall': rainfall,
+            'humidity': humidity,
+            'temperature': temperature
+        }
         
+        # Save to prediction history
+        PredictionHistory.objects.create(
+            user=request.user,
+            crop=crop,
+            fertilizer=fertilizer,
+            soil_params_json=json.dumps(soil_params)
+        )
+        
+        # Render result page
+      
         # Create recommendation record
         user = User.objects.get(id=request.user.id)
         recommendation = CropRecommendation.objects.create(
@@ -92,6 +116,14 @@ class PestRecognitionView(generics.CreateAPIView):
         
         serializer = self.get_serializer(detection)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PredictionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PredictionHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return PredictionHistory.objects.filter(user=self.request.user).order_by('-prediction_date')
     
 '''
 
