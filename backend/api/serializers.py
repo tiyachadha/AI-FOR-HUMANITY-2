@@ -8,8 +8,14 @@ class CropRecommendationSerializer(serializers.ModelSerializer):
         model = CropRecommendation
         fields = '__all__'
         read_only_fields = ['predicted_crop', 'recommended_fertilizer', 'user']
-
-
+        
+    def create(self, validated_data):
+        # Placeholder for actual ML prediction logic
+        # Will be replaced by model inference
+        validated_data['predicted_crop'] = 'Rice'  # Default prediction
+        validated_data['recommended_fertilizer'] = 'NPK 10-10-10'  # Default recommendation
+        
+        return super().create(validated_data)
 
 class PlantDiseaseDetectionSerializer(serializers.ModelSerializer):
     """Serializer for plant disease detection results"""

@@ -1,9 +1,13 @@
 from django.db import models
-from users.models import User
+from django.conf import settings
 import json
-# Create your models here.
+
 class CropRecommendation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crop_recommendations')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='api_crop_recommendations'  # Added unique related_name
+    )
     nitrogen = models.FloatField()
     phosphorus = models.FloatField()
     potassium = models.FloatField()
@@ -14,12 +18,12 @@ class CropRecommendation(models.Model):
     predicted_crop = models.CharField(max_length=100)
     recommended_fertilizer = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     def __str__(self):
-        return f"{self.user.username} - {self.predicted_crop}"
+        return f"{self.predicted_crop} for {self.user.username}"
 
 class PredictionHistory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     prediction_date = models.DateTimeField(auto_now_add=True)
     crop = models.CharField(max_length=100)
     fertilizer = models.CharField(max_length=100)
@@ -36,4 +40,4 @@ class PredictionHistory(models.Model):
         return json.loads(self.soil_params_json)
     
     def __str__(self):
-        return f"{self.user.username} - {self.crop} - {self.prediction_date}"
+        return f"{self.crop} prediction for {self.user.username}"

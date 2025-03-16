@@ -31,6 +31,7 @@ const Register = () => {
         email: values.email,
         password: values.password,
         farm_location: values.farm_location,
+        password2: values.confirmPassword,
         phone: values.phone
       });
       navigate('/login');

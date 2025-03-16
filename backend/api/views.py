@@ -1,178 +1,121 @@
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import status, viewsets
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from api.models import CropRecommendation
-from crop_prediction.prediction import predict_crop, recommend_fertilizer
-from .serializers import CropRecommendationSerializer
-from pest_recognition.models import PlantDiseaseDetection
-from users.models import User
-from pest_recognition.recognition import recognizer, get_treatment_recommendation
-from .serializers import PlantDiseaseDetectionSerializer
-from api.models import PredictionHistory
-from api.serializers import PredictionHistorySerializer
-import os
+from rest_framework.parsers import MultiPartParser, FormParser
 import json
+import os
+import tempfile
 
-# API endpoints for crop prediction
-class CropPredictionView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = CropRecommendationSerializer
+from .models import CropRecommendation, PredictionHistory
+from .serializers import CropRecommendationSerializer, PredictionHistorySerializer, PlantDiseaseDetectionSerializer
+from pest_recognition.models import PlantDiseaseDetection
+from pest_recognition.recognition import recognizer, get_treatment_recommendation
+
+class CropPredictionView(APIView):
+    permission_classes = [IsAuthenticated]
     
-    def create(self, request, *args, **kwargs):
-        # Get input parameters from request
-        n = float(request.data.get('nitrogen', 0))
-        p = float(request.data.get('phosphorus', 0))
-        k = float(request.data.get('potassium', 0))
-        ph = float(request.data.get('ph', 0))
-        rainfall = float(request.data.get('rainfall', 0))
-        humidity = float(request.data.get('humidity', 0))
-        temperature = float(request.data.get('temperature', 0))
+    def post(self, request):
+        # Add user to request data
+        data = request.data.copy()
         
-        # Make prediction
-        crop = predict_crop(n, p, k, ph, rainfall, humidity, temperature)
+        # Explicitly set the user ID in the data dictionary
+        # Make sure we're using the right key - this should match your serializer's field name
+        data['user'] = request.user.id
         
-        # Get fertilizer recommendation
-        fertilizer = recommend_fertilizer(n, p, k, crop)
+        print(f"Request data with user: {data}")  # Debug print
+        
+        serializer = CropRecommendationSerializer(data=data)
+        if serializer.is_valid():
+            try:
+                # Pass the user explicitly to ensure it's set
+                recommendation = serializer.save(user=request.user)
+                
+                # Save to prediction history
+                PredictionHistory.objects.create(
+                    user=request.user,
+                    crop=recommendation.predicted_crop,
+                    fertilizer=recommendation.recommended_fertilizer,
+                    soil_params_json=json.dumps({
+                        'nitrogen': recommendation.nitrogen,
+                        'phosphorus': recommendation.phosphorus,
+                        'potassium': recommendation.potassium,
+                        'ph': recommendation.ph,
+                        'rainfall': recommendation.rainfall,
+                        'humidity': recommendation.humidity,
+                        'temperature': recommendation.temperature,
+                    })
+                )
+                
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response(
+                    {"error": f"Failed to save recommendation: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            print(f"Serializer errors: {serializer.errors}")  # Debug print
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        soil_params = {
-            'n': n,
-            'p': p,
-            'k': k,
-            'ph': ph,
-            'rainfall': rainfall,
-            'humidity': humidity,
-            'temperature': temperature
-        }
-        
-        # Save to prediction history
-        PredictionHistory.objects.create(
-            user=request.user,
-            crop=crop,
-            fertilizer=fertilizer,
-            soil_params_json=json.dumps(soil_params)
-        )
-        
-        # Render result page
-      
-        # Create recommendation record
-        user = User.objects.get(id=request.user.id)
-        recommendation = CropRecommendation.objects.create(
-            user=user,
-            nitrogen=n,
-            phosphorus=p,
-            potassium=k,
-            ph=ph,
-            rainfall=rainfall,
-            humidity=humidity,
-            temperature=temperature,
-            predicted_crop=crop,
-            recommended_fertilizer=fertilizer
-        )
-        
-        serializer = self.get_serializer(recommendation)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+class PestRecognitionView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
     
-
-
-
-
-
-# API endpoints for disease detection
-class PestRecognitionView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = PlantDiseaseDetectionSerializer
-    
-    def create(self, request, *args, **kwargs):
-        # Get image from request
-        image = request.FILES.get('image')
-        if not image:
-            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        if 'image' not in request.FILES:
+            return Response({
+                "error": "No image file provided"
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Save temporary image
-        temp_image_path = os.path.join(settings.MEDIA_ROOT, 'temp', image.name)
-        os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
+        image_file = request.FILES['image']
         
-        with open(temp_image_path, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
+        # Save image to temporary file for processing
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(image_file.name)[1]) as tmp:
+            for chunk in image_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
         
-        # Predict pest and confidence
-        pest_name, confidence = recognizer(temp_image_path)
-        
-        # Get treatment recommendation
-        treatment = get_treatment_recommendation(pest_name)
-        
-        # Create detection record
-        detection = PlantDiseaseDetection.objects.create(
-            user=request.user,
-            image=image,
-            detected_pest=pest_name,
-            confidence=confidence,
-            treatment=treatment
-        )
-        
-        # Clean up temp file
-        os.remove(temp_image_path)
-        
-        serializer = self.get_serializer(detection)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+        try:
+            # Get prediction from the model
+            disease_name, confidence = recognizer.predict(tmp_path)
+            
+            if disease_name is None:
+                return Response({
+                    "error": "Could not process image"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Get treatment recommendation
+            treatment = get_treatment_recommendation(disease_name)
+            
+            # Create database record
+            detection = PlantDiseaseDetection.objects.create(
+                user=request.user,
+                image=image_file,
+                detected_disease=disease_name,
+                confidence=confidence,
+                treatment=treatment
+            )
+            
+            # Serialize and return the result
+            serializer = PlantDiseaseDetectionSerializer(
+                detection, 
+                context={"request": request}
+            )
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
 class PredictionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PredictionHistorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         return PredictionHistory.objects.filter(user=self.request.user).order_by('-prediction_date')
-    
-'''
-
-class PlantDiseaseRecognitionView(generics.CreateAPIView):
-    """API view for plant disease recognition, following the same pattern as PestRecognitionView"""
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = PlantDiseaseDetectionSerializer
-    
-    def create(self, request, *args, **kwargs):
-        # Get image from request
-        image = request.FILES.get('image')
-        if not image:
-            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Save temporary image
-        temp_image_path = os.path.join(settings.MEDIA_ROOT, 'temp', image.name)
-        os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
-        
-        with open(temp_image_path, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
-        
-        # Predict disease and confidence using our recognizer
-        disease_name, confidence = recognizer.predict(temp_image_path)
-        
-        if not disease_name or not confidence:
-            # Clean up temp file
-            os.remove(temp_image_path)
-            return Response(
-                {'error': 'Failed to process image or detect disease'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        # Get treatment recommendation
-        treatment = get_treatment_recommendation(disease_name)
-        
-        # Create detection record
-        detection = PlantDiseaseDetection.objects.create(
-            user=request.user,
-            image=image,
-            detected_disease=disease_name,
-            confidence=confidence,
-            treatment=treatment
-        )
-        
-        # Clean up temp file
-        os.remove(temp_image_path)
-        
-        serializer = self.get_serializer(detection)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-  '''

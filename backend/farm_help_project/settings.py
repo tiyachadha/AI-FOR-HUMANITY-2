@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import os
 from datetime import timedelta
@@ -22,18 +21,12 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
-
-
 # Configure REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    
 }
-
-
-
 
 INSTALLED_APPS = [
     # Django apps
@@ -50,14 +43,15 @@ INSTALLED_APPS = [
     'corsheaders',
     
     # Project apps
-    'api',
-    'crop_prediction',
-    'pest_recognition',
-    'users',
+    'api.apps.ApiConfig',
+    'crop_prediction.apps.CropPredictionConfig',
+    'pest_recognition.apps.PestRecognitionConfig',
+    'users.apps.UsersConfig',
+    'farm_help.apps.FarmHelpConfig',
 ]
 
-
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Moved to top for proper functioning
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -65,7 +59,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = "farm_help_project.urls"
@@ -90,8 +83,6 @@ TEMPLATES = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
-
-
 
 WSGI_APPLICATION = "farm_help_project.wsgi.application"
 
@@ -159,3 +150,8 @@ AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default auth backend
 ]
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}

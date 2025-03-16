@@ -4,3 +4,7 @@ django-cors-headers
 pillow
 scikit-learn
 tensorflow
+pandas
+numpy
+djangorestframework-simplejwt
+skimage

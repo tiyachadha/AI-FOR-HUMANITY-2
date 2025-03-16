@@ -2,6 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class User(AbstractUser):
+    """
+    Custom User model extending Django's AbstractUser.
+    """
     farm_location = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)  # Add phone field
     is_premium = models.BooleanField(default=False)  # Add is_premium field
@@ -16,8 +19,7 @@ class User(AbstractUser):
         related_name='custom_user_permissions_set',  # Change related_name to avoid conflict
         blank=True
     )
-
+    
     def __str__(self):
         return self.username
 
-    
