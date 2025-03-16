@@ -12,13 +12,23 @@ def predict_crop(n, p, k, ph, rainfall, humidity, temperature):
     """
     Predict crop based on soil and climate parameters
     """
+
+    mapper = {
+    1: 'rice', 2: 'maize', 3: 'chickpea', 4: 'kidneybeans', 5: 'pigeonpeas',
+    6: 'mothbeans', 7: 'mungbean', 8: 'blackgram', 9: 'lentil', 10: 'pomegranate',
+    11: 'banana', 12: 'mango', 13: 'grapes', 14: 'watermelon', 15: 'muskmelon',
+    16: 'apple', 17: 'orange', 18: 'papaya', 19: 'coconut', 20: 'cotton',
+    21: 'jute', 22: 'coffee'
+    }
+
     # Create input array for prediction
     input_data = np.array([[n, p, k, ph, rainfall, humidity, temperature]])
     
     # Make prediction
     crop = crop_model.predict(input_data)[0]
-    
-    return crop
+    return mapper.get(crop, 'Unknown')
+
+
 
 def recommend_fertilizer(n, p, k, crop):
     """

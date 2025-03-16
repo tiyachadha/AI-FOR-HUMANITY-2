@@ -1,0 +1,369 @@
+/* PredictionHistory.css */
+
+/* Global styles */
+.prediction-history {
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --accent-color: #f1c40f;
+    --text-color: #333;
+    --background-color: #f9f9f9;
+    --card-background: #fff;
+    --border-color: #ddd;
+    --hover-color: #f5f5f5;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border-radius: 10px;
+    transition: var(--transition);
+  }
+  
+  /* Dark mode styles */
+  .prediction-history.dark-mode {
+    --primary-color: #59a5f5;
+    --secondary-color: #6deca9;
+    --accent-color: #ffdc65;
+    --text-color: #f0f0f0;
+    --background-color: #1a1a1a;
+    --card-background: #2a2a2a;
+    --border-color: #444;
+    --hover-color: #333;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Header styles */
+  .prediction-history .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .prediction-history h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+  
+  .prediction-history .controls {
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Theme toggle button */
+  .prediction-history .theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: var(--transition);
+  }
+  
+  .prediction-history .theme-toggle:hover {
+    background-color: var(--hover-color);
+  }
+  
+  /* View toggle buttons */
+  .prediction-history .view-toggle {
+    display: flex;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  
+  .prediction-history .view-toggle button {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .prediction-history .view-toggle button:first-child {
+    border-right: 1px solid var(--border-color);
+  }
+  
+  .prediction-history .view-toggle button.active {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .prediction-history .view-toggle .icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+  }
+  
+  /* Table styles */
+  .prediction-history .table-container {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  
+  .prediction-history .table-wrapper {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  
+  .prediction-history table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  
+  .prediction-history th,
+  .prediction-history td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .prediction-history th {
+    background-color: rgba(52, 152, 219, 0.1);
+    font-weight: 600;
+    color: var(--primary-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .prediction-history tbody tr:hover {
+    background-color: var(--hover-color);
+  }
+  
+  /* Charts styles */
+  .prediction-history .charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .prediction-history .chart-selector {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .prediction-history .chart-selector label {
+    margin-right: 1rem;
+    font-weight: 500;
+  }
+  
+  .prediction-history .chart-selector select {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-background);
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  
+  .prediction-history .chart-selector select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+  }
+  
+  .prediction-history .chart-wrapper {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    overflow: hidden;
+  }
+  
+  .prediction-history .chart h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-align: center;
+  }
+  
+  /* Custom tooltip styles */
+  .prediction-history .custom-tooltip {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem;
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+  }
+  
+  .prediction-history .custom-tooltip .label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+  }
+  
+  /* Summary statistics */
+  .prediction-history .stats-summary {
+    margin-top: 2rem;
+  }
+  
+  .prediction-history .stats-summary h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+  
+  .prediction-history .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .prediction-history .stat-card {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    text-align: center;
+    transition: var(--transition);
+  }
+  
+  .prediction-history .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .prediction-history .stat-title {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+  
+  .prediction-history .stat-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+  
+  /* Loading state */
+  .prediction-history .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+  
+  .prediction-history .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Error state */
+  .prediction-history .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+  
+  .prediction-history .error-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  /* Empty state */
+  .prediction-history .empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+  
+  .prediction-history .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .prediction-history {
+      padding: 1rem;
+    }
+    
+    .prediction-history .stats-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .prediction-history h2 {
+      font-size: 1.5rem;
+    }
+    
+    .prediction-history .chart h3 {
+      font-size: 1.25rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .prediction-history .view-toggle button {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+    
+    .prediction-history .stats-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    .prediction-history th,
+    .prediction-history td {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+  }

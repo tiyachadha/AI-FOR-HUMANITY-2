@@ -3,8 +3,9 @@ import axios from 'axios';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  Cell
+  Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
+import '../../PredictionHistory.css';
 
 const PredictionHistory = () => {
   const [predictionHistory, setPredictionHistory] = useState([]);
@@ -12,9 +13,14 @@ const PredictionHistory = () => {
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('table');
   const [chartType, setChartType] = useState('crop');
+  const [darkMode, setDarkMode] = useState(false);
 
-  // Colors for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  // Enhanced color schemes
+  const LIGHT_COLORS = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#9b59b6', '#1abc9c'];
+  const DARK_COLORS = ['#59a5f5', '#6deca9', '#ffdc65', '#ff7b69', '#ce93d8', '#4dcebd'];
+
+  // Use color scheme based on mode
+  const COLORS = darkMode ? DARK_COLORS : LIGHT_COLORS;
 
   useEffect(() => {
     const fetchPredictionHistory = async () => {
@@ -133,168 +139,337 @@ const PredictionHistory = () => {
     }));
   };
 
+  // Function to prepare radar chart data
+  const prepareRadarData = () => {
+    if (!predictionHistory || predictionHistory.length === 0) return [];
+    
+    // Use the most recent prediction for radar chart
+    const latestPrediction = predictionHistory[0];
+    
+    return [
+      {
+        subject: 'Nitrogen',
+        A: parseFloat(latestPrediction.n) || 0,
+        fullMark: 150
+      },
+      {
+        subject: 'Phosphorus',
+        A: parseFloat(latestPrediction.p) || 0,
+        fullMark: 150
+      },
+      {
+        subject: 'Potassium',
+        A: parseFloat(latestPrediction.k) || 0,
+        fullMark: 150
+      },
+      {
+        subject: 'pH',
+        A: (parseFloat(latestPrediction.ph) || 0) * 10,
+        fullMark: 140
+      },
+      {
+        subject: 'Rainfall',
+        A: parseFloat(latestPrediction.rainfall) || 0,
+        fullMark: 300
+      },
+      {
+        subject: 'Temperature',
+        A: parseFloat(latestPrediction.temperature) || 0,
+        fullMark: 50
+      }
+    ];
+  };
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label">{`${label}`}</p>
+          {payload.map((entry, index) => (
+            <p key={`item-${index}`} style={{ color: entry.color }}>
+              {`${entry.name}: ${entry.value}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
-    return <div className="text-center p-4">Loading prediction history...</div>;
+    return (
+      <div className={`loading-container ${darkMode ? 'dark-mode' : ''}`}>
+        <div className="spinner"></div>
+        <p>Loading prediction history...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center p-4 text-danger">{error}</div>;
+    return (
+      <div className={`error-container ${darkMode ? 'dark-mode' : ''}`}>
+        <div className="error-icon">!</div>
+        <p>{error}</p>
+      </div>
+    );
   }
 
   if (!predictionHistory || predictionHistory.length === 0) {
-    return <div className="text-center p-4">No prediction history found. Make some predictions first!</div>;
+    return (
+      <div className={`empty-container ${darkMode ? 'dark-mode' : ''}`}>
+        <div className="empty-icon">📊</div>
+        <p>No prediction history found. Make some predictions first!</p>
+      </div>
+    );
   }
 
   return (
-    <div className="prediction-history">
-      <h2 className="mb-4">Your Prediction History</h2>
+    <div className={`prediction-history ${darkMode ? 'dark-mode' : ''}`}>
+      <div className="header">
+        <h2>Your Prediction History</h2>
+        <div className="controls">
+          <button 
+            className="theme-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+        </div>
+      </div>
       
-      {/* View toggle buttons (using Bootstrap styling) */}
-      <div className="btn-group mb-4" role="group">
+      {/* View toggle buttons */}
+      <div className="view-toggle">
         <button 
-          type="button" 
-          className={`btn ${activeView === 'table' ? 'btn-primary' : 'btn-outline-primary'}`}
+          className={activeView === 'table' ? 'active' : ''}
           onClick={() => setActiveView('table')}
         >
-          Table View
+          <span className="icon">📋</span> Table View
         </button>
         <button 
-          type="button" 
-          className={`btn ${activeView === 'charts' ? 'btn-primary' : 'btn-outline-primary'}`}
+          className={activeView === 'charts' ? 'active' : ''}
           onClick={() => setActiveView('charts')}
         >
-          Charts View
+          <span className="icon">📊</span> Charts View
         </button>
       </div>
       
       {/* Table View */}
       {activeView === 'table' && (
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Crop</th>
-                <th>Fertilizer</th>
-                <th>N</th>
-                <th>P</th>
-                <th>K</th>
-                <th>pH</th>
-                <th>Rainfall</th>
-                <th>Humidity</th>
-                <th>Temperature</th>
-              </tr>
-            </thead>
-            <tbody>
-              {predictionHistory.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.prediction_date}</td>
-                  <td>{item.crop || 'N/A'}</td>
-                  <td>{item.fertilizer || 'N/A'}</td>
-                  <td>{item.n || 'N/A'}</td>
-                  <td>{item.p || 'N/A'}</td>
-                  <td>{item.k || 'N/A'}</td>
-                  <td>{item.ph || 'N/A'}</td>
-                  <td>{item.rainfall || 'N/A'}</td>
-                  <td>{item.humidity || 'N/A'}</td>
-                  <td>{item.temperature || 'N/A'}</td>
+        <div className="table-container">
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Crop</th>
+                  <th>Fertilizer</th>
+                  <th>N</th>
+                  <th>P</th>
+                  <th>K</th>
+                  <th>pH</th>
+                  <th>Rainfall</th>
+                  <th>Humidity</th>
+                  <th>Temperature</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {predictionHistory.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.prediction_date}</td>
+                    <td>{item.crop || 'N/A'}</td>
+                    <td>{item.fertilizer || 'N/A'}</td>
+                    <td>{item.n || 'N/A'}</td>
+                    <td>{item.p || 'N/A'}</td>
+                    <td>{item.k || 'N/A'}</td>
+                    <td>{item.ph || 'N/A'}</td>
+                    <td>{item.rainfall || 'N/A'}</td>
+                    <td>{item.humidity || 'N/A'}</td>
+                    <td>{item.temperature || 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       
       {/* Charts View */}
       {activeView === 'charts' && (
-        <div>
+        <div className="charts-container">
           {/* Chart type selector */}
-          <div className="form-group mb-4">
+          <div className="chart-selector">
             <label htmlFor="chartType">Select Chart Type:</label>
             <select 
               id="chartType"
-              className="form-control" 
-              style={{ maxWidth: '300px' }}
               value={chartType}
               onChange={(e) => setChartType(e.target.value)}
             >
               <option value="crop">Crop Distribution</option>
               <option value="soil">Soil Parameters History</option>
               <option value="fertilizer">Fertilizer Recommendations</option>
+              <option value="radar">Latest Soil Parameters</option>
             </select>
           </div>
           
-          {/* Crop Distribution Pie Chart */}
-          {chartType === 'crop' && (
-            <div>
-              <h3 className="mb-3">Crop Distribution</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={prepareCropDistributionData()}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={150}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          <div className="chart-wrapper">
+            {/* Crop Distribution Pie Chart */}
+            {chartType === 'crop' && (
+              <div className="chart">
+                <h3>Crop Distribution</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Pie
+                      data={prepareCropDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={150}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {prepareCropDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            
+            {/* Soil Parameters Line Chart */}
+            {chartType === 'soil' && (
+              <div className="chart">
+                <h3>Soil Parameters History (Last 10 Predictions)</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart
+                    data={prepareSoilParamsData()}
+                    margin={{top: 20, right: 30, left: 20, bottom: 20}}
                   >
-                    {prepareCropDistributionData().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="nitrogen" 
+                      stroke={COLORS[0]} 
+                      strokeWidth={2}
+                      activeDot={{r: 8}} 
+                      dot={{ stroke: COLORS[0], strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="phosphorus" 
+                      stroke={COLORS[1]} 
+                      strokeWidth={2}
+                      activeDot={{r: 8}} 
+                      dot={{ stroke: COLORS[1], strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="potassium" 
+                      stroke={COLORS[2]} 
+                      strokeWidth={2}
+                      activeDot={{r: 8}} 
+                      dot={{ stroke: COLORS[2], strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="ph" 
+                      stroke={COLORS[3]} 
+                      strokeWidth={2}
+                      activeDot={{r: 8}} 
+                      dot={{ stroke: COLORS[3], strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            
+            {/* Fertilizer Bar Chart */}
+            {chartType === 'fertilizer' && (
+              <div className="chart">
+                <h3>Fertilizer Recommendations</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={prepareFertilizerData()}
+                    margin={{top: 20, right: 30, left: 20, bottom: 20}}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="value" fill="#8884d8" barSize={40} radius={[5, 5, 0, 0]}>
+                      {prepareFertilizerData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            
+            {/* Radar Chart for Latest Soil Parameters */}
+            {chartType === 'radar' && (
+              <div className="chart">
+                <h3>Latest Soil Parameters</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <RadarChart 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius="80%" 
+                    data={prepareRadarData()}
+                  >
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis />
+                    <Radar 
+                      name="Soil Parameters" 
+                      dataKey="A" 
+                      stroke={COLORS[0]} 
+                      fill={COLORS[0]} 
+                      fillOpacity={0.6} 
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
           
-          {/* Soil Parameters Line Chart */}
-          {chartType === 'soil' && (
-            <div>
-              <h3 className="mb-3">Soil Parameters History (Last 10 Predictions)</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={prepareSoilParamsData()}
-                  margin={{top: 5, right: 30, left: 20, bottom: 5}}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="nitrogen" stroke="#8884d8" activeDot={{r: 8}} />
-                  <Line type="monotone" dataKey="phosphorus" stroke="#82ca9d" activeDot={{r: 8}} />
-                  <Line type="monotone" dataKey="potassium" stroke="#ffc658" activeDot={{r: 8}} />
-                  <Line type="monotone" dataKey="ph" stroke="#ff8042" activeDot={{r: 8}} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-          
-          {/* Fertilizer Bar Chart */}
-          {chartType === 'fertilizer' && (
-            <div>
-              <h3 className="mb-3">Fertilizer Recommendations</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={prepareFertilizerData()}
-                  margin={{top: 5, right: 30, left: 20, bottom: 5}}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8">
-                    {prepareFertilizerData().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          {/* Summary statistics */}
+          {predictionHistory.length > 0 && (
+            <div className="stats-summary">
+              <h3>Summary Statistics</h3>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-title">Total Predictions</div>
+                  <div className="stat-value">{predictionHistory.length}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-title">Unique Crops</div>
+                  <div className="stat-value">{new Set(predictionHistory.map(item => item.crop).filter(Boolean)).size}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-title">Unique Fertilizers</div>
+                  <div className="stat-value">{new Set(predictionHistory.map(item => item.fertilizer).filter(Boolean)).size}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-title">Average pH</div>
+                  <div className="stat-value">
+                    {(predictionHistory.reduce((sum, item) => sum + (parseFloat(item.ph) || 0), 0) / 
+                      predictionHistory.filter(item => item.ph).length).toFixed(2)}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -304,3 +479,4 @@ const PredictionHistory = () => {
 };
 
 export default PredictionHistory;
+                    

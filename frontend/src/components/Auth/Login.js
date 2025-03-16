@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import '../../Auth.css'
 
 const loginSchema = Yup.object().shape({
   username: Yup.string().required('Username is required'),
@@ -31,71 +32,71 @@ const Login = ({ setAuth }) => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="text-center">Login to Farm Help</h3>
-            </div>
-            <div className="card-body">
-              <Formik
-                initialValues={{ username: '', password: '' }}
-                validationSchema={loginSchema}
-                onSubmit={handleSubmit}
-              >
-                {({ isSubmitting, errors }) => (
-                  <Form>
-                    <div className="form-group mb-3">
-                      <label htmlFor="username">Username</label>
-                      <Field
-                        type="text"
-                        name="username"
-                        className="form-control"
-                        placeholder="Enter username"
-                      />
-                      <ErrorMessage name="username" component="div" className="text-danger" />
-                    </div>
+    <div className="login-container">
+      <div className="login-content">
+        <div className="login-card">
+          <div className="login-header">
+            <h1>AgriTech</h1>
+            <h2>Login to Farm Help</h2>
+            <p className="login-subtitle">Access your farm management dashboard</p>
+          </div>
+          <div className="login-body">
+            <Formik
+              initialValues={{ username: '', password: '' }}
+              validationSchema={loginSchema}
+              onSubmit={handleSubmit}
+            >
+              {({ isSubmitting, errors }) => (
+                <Form>
+                  <div className="form-group">
+                    <label htmlFor="username">Username</label>
+                    <Field
+                      type="text"
+                      name="username"
+                      className="form-input"
+                      placeholder="Enter username"
+                    />
+                    <ErrorMessage name="username" component="div" className="error-message" />
+                  </div>
 
-                    <div className="form-group mb-3">
-                      <label htmlFor="password">Password</label>
-                      <Field
-                        type="password"
-                        name="password"
-                        className="form-control"
-                        placeholder="Enter password"
-                      />
-                      <ErrorMessage name="password" component="div" className="text-danger" />
-                    </div>
+                  <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <Field
+                      type="password"
+                      name="password"
+                      className="form-input"
+                      placeholder="Enter password"
+                    />
+                    <ErrorMessage name="password" component="div" className="error-message" />
+                  </div>
 
-                    {errors.auth && <div className="alert alert-danger">{errors.auth}</div>}
+                  {errors.auth && <div className="auth-error">{errors.auth}</div>}
 
-                    <button
-                      type="submit"
-                      className="btn btn-primary w-100"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Logging in...' : 'Login'}
-                    </button>
-                  </Form>
-                )}
-              </Formik>
-              <div className="mt-3 text-center">
-                <p>
-                  Don't have an account?{' '}
-                  <span
-                    className="text-primary"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => navigate('/register')}
+                  <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={isSubmitting}
                   >
-                    Register
-                  </span>
-                </p>
-              </div>
+                    {isSubmitting ? 'Logging in...' : 'Login'}
+                  </button>
+                </Form>
+              )}
+            </Formik>
+            <div className="auth-redirect">
+              <p>
+                Don't have an account?{' '}
+                <span
+                  className="redirect-link"
+                  onClick={() => navigate('/register')}
+                >
+                  Register
+                </span>
+              </p>
             </div>
           </div>
         </div>
       </div>
+      <div className="login-background"></div>
     </div>
   );
 };
