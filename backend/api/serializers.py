@@ -32,7 +32,7 @@ class PlantDiseaseDetectionSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         request = self.context.get('request')
-        if request and obj.image:
+        if obj.image and hasattr(obj.image, 'url') and request:
             return request.build_absolute_uri(obj.image.url)
         return None
     

@@ -32,3 +32,6 @@ data/
 *.model
 .idea/
 .vscode/
+media/
+.sqlite3
+.log

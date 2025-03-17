@@ -87,14 +87,25 @@ class PestRecognitionView(APIView):
             # Get treatment recommendation
             treatment = get_treatment_recommendation(disease_name)
             
-            # Create database record
-            detection = PlantDiseaseDetection.objects.create(
-                user=request.user,
-                image=image_file,
-                detected_disease=disease_name,
-                confidence=confidence,
-                treatment=treatment
-            )
+            # Debug information
+            print(f"User authenticated: {request.user.is_authenticated}")
+            print(f"User ID: {request.user.id}")
+            print(f"User: {request.user}")
+            
+            # Create database record using objects.create to ensure proper foreign key assignment
+            try:
+                detection = PlantDiseaseDetection.objects.create(
+                    user=request.user,
+                    image=image_file,
+                    detected_disease=disease_name,
+                    confidence=confidence,
+                    treatment=treatment
+                )
+            except Exception as db_error:
+                print(f"Database integrity error when saving detection: {str(db_error)}")
+                return Response({
+                    "error": f"Database error: {str(db_error)}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Serialize and return the result
             serializer = PlantDiseaseDetectionSerializer(
