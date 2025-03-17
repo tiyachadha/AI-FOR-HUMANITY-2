@@ -17,6 +17,9 @@ class CropRecommendation(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.predicted_crop}"
+    
+
+    
 
 class PredictionHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -37,3 +40,19 @@ class PredictionHistory(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.crop} - {self.prediction_date}"
+    
+
+
+# api/models.py
+
+
+
+class PlantDiseaseDetection(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='plant_disease_images/')
+    detected_classes = models.JSONField(default=list)
+    result_image = models.ImageField(upload_to='plant_disease_results/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Detection {self.id} by {self.user.username} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"

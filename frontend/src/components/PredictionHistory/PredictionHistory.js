@@ -218,7 +218,7 @@ const PredictionHistory = () => {
   if (!predictionHistory || predictionHistory.length === 0) {
     return (
       <div className={`empty-container ${darkMode ? 'dark-mode' : ''}`}>
-        <div className="empty-icon">📊</div>
+        <div className="empty-icon"></div>
         <p>No prediction history found. Make some predictions first!</p>
       </div>
     );
@@ -245,13 +245,13 @@ const PredictionHistory = () => {
           className={activeView === 'table' ? 'active' : ''}
           onClick={() => setActiveView('table')}
         >
-          <span className="icon">📋</span> Table View
+          <span className="icon"></span> Table View
         </button>
         <button 
           className={activeView === 'charts' ? 'active' : ''}
           onClick={() => setActiveView('charts')}
         >
-          <span className="icon">📊</span> Charts View
+          <span className="icon"></span> Charts View
         </button>
       </div>
       

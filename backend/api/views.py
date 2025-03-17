@@ -4,14 +4,30 @@ from rest_framework.permissions import IsAuthenticated
 from api.models import CropRecommendation
 from crop_prediction.prediction import predict_crop, recommend_fertilizer
 from .serializers import CropRecommendationSerializer
-from pest_recognition.models import PlantDiseaseDetection
 from users.models import User
-from pest_recognition.recognition import recognizer, get_treatment_recommendation
 from .serializers import PlantDiseaseDetectionSerializer
 from api.models import PredictionHistory
 from api.serializers import PredictionHistorySerializer
 import os
 import json
+from django.conf import settings
+from pest_recognition.inference import inference
+from django.core.files.base import ContentFile
+import json
+
+import cv2
+
+# Import the inference and chatbot functions
+
+
+from rest_framework.views import APIView
+from django.conf import settings
+import sys
+
+
+
+
+
 
 # API endpoints for crop prediction
 class CropPredictionView(generics.CreateAPIView):
@@ -77,45 +93,7 @@ class CropPredictionView(generics.CreateAPIView):
 
 
 
-# API endpoints for disease detection
-class PestRecognitionView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = PlantDiseaseDetectionSerializer
-    
-    def create(self, request, *args, **kwargs):
-        # Get image from request
-        image = request.FILES.get('image')
-        if not image:
-            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Save temporary image
-        temp_image_path = os.path.join(settings.MEDIA_ROOT, 'temp', image.name)
-        os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
-        
-        with open(temp_image_path, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
-        
-        # Predict pest and confidence
-        pest_name, confidence = recognizer(temp_image_path)
-        
-        # Get treatment recommendation
-        treatment = get_treatment_recommendation(pest_name)
-        
-        # Create detection record
-        detection = PlantDiseaseDetection.objects.create(
-            user=request.user,
-            image=image,
-            detected_pest=pest_name,
-            confidence=confidence,
-            treatment=treatment
-        )
-        
-        # Clean up temp file
-        os.remove(temp_image_path)
-        
-        serializer = self.get_serializer(detection)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 class PredictionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -125,54 +103,46 @@ class PredictionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return PredictionHistory.objects.filter(user=self.request.user).order_by('-prediction_date')
     
-'''
 
-class PlantDiseaseRecognitionView(generics.CreateAPIView):
-    """API view for plant disease recognition, following the same pattern as PestRecognitionView"""
+
+
+
+
+
+
+
+# api/views.py
+
+class PlantDiseaseDetectionView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PlantDiseaseDetectionSerializer
     
     def create(self, request, *args, **kwargs):
-        # Get image from request
-        image = request.FILES.get('image')
-        if not image:
-            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
         
-        # Save temporary image
-        temp_image_path = os.path.join(settings.MEDIA_ROOT, 'temp', image.name)
-        os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
-        
-        with open(temp_image_path, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
-        
-        # Predict disease and confidence using our recognizer
-        disease_name, confidence = recognizer.predict(temp_image_path)
-        
-        if not disease_name or not confidence:
-            # Clean up temp file
-            os.remove(temp_image_path)
-            return Response(
-                {'error': 'Failed to process image or detect disease'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        # Get treatment recommendation
-        treatment = get_treatment_recommendation(disease_name)
-        
-        # Create detection record
-        detection = PlantDiseaseDetection.objects.create(
-            user=request.user,
-            image=image,
-            detected_disease=disease_name,
-            confidence=confidence,
-            treatment=treatment
-        )
-        
-        # Clean up temp file
-        os.remove(temp_image_path)
-        
-        serializer = self.get_serializer(detection)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            plant_detection = serializer.save(user=request.user)
+            image_path = plant_detection.image.path
+            
+            img = cv2.imread(image_path)
+            result_img, classes, detected_classes_indices = inference(img)
+            detected_class_names = [
+                classes[idx] if isinstance(idx, int) else idx
+                for idx in detected_classes_indices
+]            
+            result_image_name = f"result_{os.path.basename(image_path)}"
+            result_image_path = os.path.join(settings.MEDIA_ROOT, 'plant_disease_results', result_image_name)
+            os.makedirs(os.path.dirname(result_image_path), exist_ok=True)
+            
+            success, buffer = cv2.imencode('.jpg', result_img)
+            if success:
+                plant_detection.result_image.save(
+                    result_image_name,
+                    ContentFile(buffer.tobytes()),
+                    save=False
+                )
+                plant_detection.detected_classes = detected_class_names
+                plant_detection.save()
 
-  '''
+            serializer = self.get_serializer(plant_detection)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)

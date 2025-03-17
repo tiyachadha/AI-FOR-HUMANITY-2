@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from api.models import CropRecommendation
-from pest_recognition.models import PlantDiseaseDetection
+from .models import CropRecommendation
 from .models import PredictionHistory
+from .models import PlantDiseaseDetection
 
 class CropRecommendationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,28 +10,6 @@ class CropRecommendationSerializer(serializers.ModelSerializer):
         read_only_fields = ['predicted_crop', 'recommended_fertilizer', 'user']
 
 
-
-class PlantDiseaseDetectionSerializer(serializers.ModelSerializer):
-    """Serializer for plant disease detection results"""
-    image_url = serializers.SerializerMethodField()
-    username = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = PlantDiseaseDetection
-        fields = [
-            'id', 'image_url', 'detected_disease', 'confidence', 
-            'treatment', 'created_at', 'username'
-        ]
-        read_only_fields = ['detected_disease', 'confidence', 'treatment']
-    
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if request and obj.image:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-    
-    def get_username(self, obj):
-        return obj.user.username
 
 
 class PredictionHistorySerializer(serializers.ModelSerializer):
@@ -43,3 +21,13 @@ class PredictionHistorySerializer(serializers.ModelSerializer):
     
     def get_soil_params(self, obj):
         return obj.soil_params
+    
+
+# api/serializers.py
+
+
+class PlantDiseaseDetectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlantDiseaseDetection
+        fields = ['id', 'image', 'detected_classes', 'result_image', 'created_at']
+        read_only_fields = ['detected_classes', 'result_image', 'created_at']

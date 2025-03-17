@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Nav } from 'react-bootstrap';
 import CropPredictionForm from '../CropPrediction/CropPredictionForm';
 import CropPredictionResult from '../CropPrediction/CropPredictionResult';
-import PestRecognitionForm from '../PestRecognition/PestRecognitionForm';
+import PlantDiseaseDetectionForm from '../PestRecognition/PestRecognitionForm';
 import PestDetectionResult from '../PestRecognition/PestDetectionResult';
 import PredictionHistory from '../PredictionHistory/PredictionHistory';
 import '../../Dashboard.css'; // We'll create this file for custom styling
@@ -35,7 +35,7 @@ const Dashboard = () => {
       case 'pest-recognition':
         return (
           <>
-            <PestRecognitionForm onDetectionResult={handleNewDetection} />
+            <PlantDiseaseDetectionForm onDetectionResult={handleNewDetection} />
             <PestDetectionResult detectionData={pestDetection} />
           </>
         );
