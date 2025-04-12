@@ -91,15 +91,7 @@ const Dashboard = () => {
                 History
               </Nav.Link>
             </Nav.Item>
-            <Nav.Item>
-              <Nav.Link 
-                className={activeTab === 'settings' ? 'active' : ''}
-                onClick={() => setActiveTab('settings')}
-              >
-                <i className="bi bi-gear me-2"></i>
-                Settings
-              </Nav.Link>
-            </Nav.Item>
+            
             <Nav.Item className="mt-auto">
               <Nav.Link 
                 className="logout-link"

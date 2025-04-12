@@ -30,22 +30,14 @@ class PredictionHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(PlantDiseaseDetection)
 class PlantDiseaseDetectionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'get_diseases', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('user__username', 'detected_classes')
-    readonly_fields = ('created_at',)
+    list_display = ('id', 'user', 'created_at', 'get_detected_classes')
+    list_filter = ('created_at', 'user')
+    search_fields = ('user__username',)
+    readonly_fields = ('detected_classes', 'created_at')
     
-    def get_diseases(self, obj):
-        if obj.detected_classes and len(obj.detected_classes) > 0:
-            return ', '.join(obj.detected_classes)
-        return 'No diseases detected'
-    get_diseases.short_description = 'Detected Diseases'
+    def get_detected_classes(self, obj):
+        if obj.detected_classes and isinstance(obj.detected_classes, list):
+            return ", ".join(str(item) for item in obj.detected_classes)
+        return "None"
     
-    fieldsets = (
-        (None, {
-            'fields': ('user', 'created_at')
-        }),
-        ('Detection Results', {
-            'fields': ('detected_classes', 'image', 'result_image'),
-        }),
-    )
+    get_detected_classes.short_description = "Detected Diseases"
